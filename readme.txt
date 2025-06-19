@@ -1,0 +1,1 @@
+--This project is to create mock data by creating a mapping file and parsing out a file to S3 bucket
