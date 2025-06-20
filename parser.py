@@ -1,21 +1,28 @@
 import csv
-from datetime import datetime
 import re
+from datetime import datetime
+from collections import defaultdict
+import os
+
+def parse_text_file(data_path, mapping_path, output_dir='.', bad_data_path='bad_data.csv'):
+    os.makedirs(output_dir, exist_ok=True)
+    ...
+
 
 def load_mapping(mapping_path):
-    mapping = []
+    segment_mapping = defaultdict(list)
     with open(mapping_path, newline='') as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
-            start = int(row['starting'])
-            length = int(row['length'])
-            mapping.append({
+            field = {
                 'name': row['column_name'],
-                'start': start,
-                'end': start + length,
-                'type': row['datatype'].strip().lower()  # e.g., 'text', 'date', 'integer'
-            })
-    return mapping
+                'start': int(row['starting']),
+                'end': int(row['starting']) + int(row['length']),
+                'type': row['datatype'].strip().lower(),
+                'segment': row['segment_name'].strip()
+            }
+            segment_mapping[field['segment']].append(field)
+    return segment_mapping
 
 def convert_dob(dob_raw):
     if len(dob_raw) != 6 or not dob_raw.isdigit():
@@ -27,93 +34,96 @@ def convert_dob(dob_raw):
     except ValueError:
         return '', 'Invalid DOB'
 
+def validate_text(value):
+    return value if re.fullmatch(r'[A-Za-z ]*', value) else ''
+
 def validate_integer(value):
-    """
-    Validates that the value contains only digits.
-    Returns the value if valid, else returns ''.
-    """
     return value if value.isdigit() else ''
 
-
-def validate_text(value):
-    """
-    Allows only alphabetic characters and spaces.
-    Returns the value if valid, otherwise returns ''.
-    """
-    if re.fullmatch(r'[A-Za-z ]*', value):
-        return value
-    return ''
-
-
-def parse_line(line, mapping):
+def parse_segment(line, fields):
     record = {}
     bad_reasons = []
-
-    for field in mapping:
+    for field in fields:
         raw_value = line[field['start']:field['end']].strip()
+        name = field['name']
         dtype = field['type']
-        fname = field['name']
 
-        if dtype == 'date' and fname.lower() == 'dob':
+        if dtype == 'date' and name.lower() == 'dob':
             value, error = convert_dob(raw_value)
             if error:
                 bad_reasons.append(error)
-
         elif dtype == 'text':
             cleaned = validate_text(raw_value)
             if cleaned != raw_value:
-                bad_reasons.append(f"Invalid {fname} (non-alpha or symbols)")
+                bad_reasons.append(f"Invalid {name} (non-alpha or symbols)")
             value = cleaned
-
         elif dtype == 'integer':
             cleaned = validate_integer(raw_value)
             if cleaned != raw_value:
-                bad_reasons.append(f"Invalid {fname} (non-digit)")
+                bad_reasons.append(f"Invalid {name} (non-digit)")
             value = cleaned
-
         else:
-            value = raw_value  # future types can be added here
+            value = raw_value
 
-        record[fname] = value
+        record[name] = value
 
     return record, bad_reasons
 
-
-def parse_text_file(data_path, mapping_path, output_path, bad_data_path):
-    mapping = load_mapping(mapping_path)
+def parse_text_file(data_path, mapping_path, output_dir='.', bad_data_path='bad_data.csv'):
+    segment_mapping = load_mapping(mapping_path)
+    writers = {}
+    fieldnames_map = {}
+    files = {}
 
     with open(data_path, 'r') as infile, \
-         open(output_path, 'w', newline='', encoding='utf-8') as goodfile, \
-         open(bad_data_path, 'w', newline='', encoding='utf-8') as badfile:
+         open(f"{output_dir}/{bad_data_path}", 'w', newline='', encoding='utf-8') as badfile:
 
-        good_writer = None
         bad_writer = None
 
         for line_num, line in enumerate(infile, start=1):
             line = line.rstrip('\n').ljust(134)
-            record, errors = parse_line(line, mapping)
+            full_bad = False
+            all_segment_data = {}
 
-            # Initialize writers
-            if good_writer is None:
-                good_writer = csv.DictWriter(goodfile, fieldnames=record.keys())
-                good_writer.writeheader()
+            # Parse each segment
+            for segment, fields in segment_mapping.items():
+                record, errors = parse_segment(line, fields)
+                all_segment_data[segment] = record
 
-            if bad_writer is None:
-                bad_fields = list(record.keys()) + ['raw_data', 'comment']
-                bad_writer = csv.DictWriter(badfile, fieldnames=bad_fields)
-                bad_writer.writeheader()
+                if errors:
+                    full_bad = True
+                    if bad_writer is None:
+                        bad_fields = list(record.keys()) + ['raw_data', 'comment']
+                        bad_writer = csv.DictWriter(badfile, fieldnames=bad_fields)
+                        bad_writer.writeheader()
 
-            # Always write to main output
-            good_writer.writerow(record)
+                    bad_record = dict(record)
+                    bad_record['raw_data'] = line.strip()
+                    bad_record['comment'] = "; ".join(errors)
+                    bad_writer.writerow(bad_record)
 
-            # Log bad data if any error detected
-            if errors:
-                bad_record = dict(record)
-                bad_record['raw_data'] = line.strip()
-                bad_record['comment'] = "; ".join(errors)
-                bad_writer.writerow(bad_record)
+                # Write to appropriate parsed_segment_output.csv
+                if segment not in writers:
+                    output_file = open(f"{output_dir}/parsed_{segment.lower()}_output.csv", 'w', newline='', encoding='utf-8')
+                    fieldnames_map[segment] = list(record.keys())
+                    writer = csv.DictWriter(output_file, fieldnames=fieldnames_map[segment])
+                    writer.writeheader()
+                    writers[segment] = writer
+                    files[segment] = output_file
+
+                writers[segment].writerow(record)
+
+    # Close all segment files
+    for f in files.values():
+        f.close()
+
 
 # Example usage — adjust filenames if needed
 if __name__ == '__main__':
-    parse_text_file('./mock_output/mock_names.txt', './input_files_for_parsing/mapping_for_parsing.csv', './parsed_output/parsed_output.csv','./bad_data/bad_data.csv' )
+    parse_text_file(
+    './mock_output/mock_names.txt',
+    './input_files_for_parsing/mapping_for_parsing.csv',
+    './parsed_output',          # ✅ A directory to write segmented outputs into
+    'bad_data.csv'              # ✅ A filename (will go into output_dir)
+)
 
