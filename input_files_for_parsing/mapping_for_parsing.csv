@@ -1,0 +1,9 @@
+segment_name,column_name,length,starting,ending,datatype
+Bio,first_name,20,0,20,text
+Bio,last_name,20,20,40,text
+Bio,dob,6,40,46,date
+Bio,ssn,9,46,55,integer
+Bio,city,28,55,83,text
+Bio,state,2,83,85,text
+Bio,zip_code,9,85,94,integer
+Bio,address,40,94,134,normal
