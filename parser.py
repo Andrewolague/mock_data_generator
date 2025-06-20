@@ -1,6 +1,6 @@
 import csv
+from datetime import datetime
 
-# Step 1: Load mapping
 def load_mapping(mapping_path):
     mapping = []
     with open(mapping_path, newline='') as csvfile:
@@ -15,21 +15,41 @@ def load_mapping(mapping_path):
             })
     return mapping
 
-# Step 2: Parse a single line using mapping
+def convert_dob(dob_raw):
+    """
+    Converts 'YYMMDD' to 'YYYY-MM-DD'.
+    Years < 11 are treated as 2000s; otherwise, 1900s.
+    """
+    if len(dob_raw) != 6 or not dob_raw.isdigit():
+        return dob_raw  # Return raw if not valid format
+
+    yy = int(dob_raw[:2])
+    mm = int(dob_raw[2:4])
+    dd = int(dob_raw[4:6])
+
+    try:
+        year = 2000 + yy if yy < 11 else 1900 + yy
+        dob = datetime(year, mm, dd)
+        return dob.strftime('%Y-%m-%d')
+    except ValueError:
+        return dob_raw  # Return raw if date is invalid
+
+
 def parse_line(line, mapping):
     record = {}
     for field in mapping:
         value = line[field['start']:field['end']].strip()
+        if field['name'].lower() == 'dob':
+            value = convert_dob(value)
         record[field['name']] = value
     return record
 
-# Step 3: Parse entire file and write to CSV
 def parse_text_file(data_path, mapping_path, output_path):
     mapping = load_mapping(mapping_path)
     with open(data_path, 'r') as infile, open(output_path, 'w', newline='', encoding='utf-8') as outfile:
         writer = None
         for line in infile:
-            line = line.rstrip('\n').ljust(134)  # Ensure full line width
+            line = line.rstrip('\n').ljust(134)
             record = parse_line(line, mapping)
             if writer is None:
                 writer = csv.DictWriter(outfile, fieldnames=record.keys())
