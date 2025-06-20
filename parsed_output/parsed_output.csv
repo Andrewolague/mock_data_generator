@@ -1,7 +1,7 @@
 first_name,last_name,dob,ssn,address,city,state,zip_code
 Kevin,Herring,1997-02-10,904991391,151 Kristen Ridges,Port Daniel,CO,04565
 David,Ward,1978-01-20,984468981,169 Seth Corners Suite 783,Port Alyssamouth,NC,41663
-Nancy,Douglas,1970-09-09,969189442,250 Brown Plaza,New Michaelmouth,MA,18093
+Nancy,,1970-09-09,969189442,250 Brown Plaza,New Michaelmouth,MA,18093
 Karen,Davis,2000-03-25,966266421,36981 Jerry Key,Lake Michael,GA,94198
 Erica,Hughes,1967-10-11,991879505,3564 Daniel Summit Apt. 653,New Jeff,NY,92221
 Kristi,Hernandez,1986-02-05,958366822,76419 Michael Overpass Suite 396,Lake Jamesbury,MO,54508

@@ -1,7 +1,7 @@
 segment_name,column_name,length,starting,ending,datatype
 Bio,first_name,20,0,20,text
 Bio,last_name,20,20,40,text
-Bio,dob,6,40,46,date
+Bio,dob,6,40,46,dob
 Bio,ssn,9,46,55,integer
 Bio,address,40,55,95,normal
 Bio,city,28,95,123,text
