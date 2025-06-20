@@ -14,6 +14,10 @@ output_dir = './mock_output/'
 output_file = os.path.join(output_dir, 'mock_names.txt')
 
 
+def generate_fake_ssn():
+    # SSN must start with 9 and be 9 digits total
+    return f"9{randint(0, 99999999):08d}"
+
 def generate_random_dob_code():
     # Generate realistic DOB between 1940-2010
     year = randint(1940, 2010)
@@ -44,9 +48,10 @@ with open(output_file, 'w', encoding='utf-8') as file:
         first_name = fake.first_name()
         last_name = fake.last_name()
         if len(first_name) > 20 or len(last_name) > 20:
-            continue  # Skip long names
+            continue
 
         dob_code = generate_random_dob_code()
+        ssn = generate_fake_ssn()
         address = fake.street_address()[:40]
         city = fake.city()[:28]
         state = fake.state_abbr()
@@ -55,7 +60,8 @@ with open(output_file, 'w', encoding='utf-8') as file:
         line = (
             f"{first_name:<20}"
             f"{last_name:<20}"
-            f"{dob_code}"
+            f"{dob_code}"         # 6 chars
+            f"{ssn:<9}"           # 9 chars
             f"{address:<40}"
             f"{city:<28}"
             f"{state:<2}"
