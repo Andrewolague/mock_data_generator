@@ -27,6 +27,12 @@ def convert_dob(dob_raw):
     except ValueError:
         return '', 'Invalid DOB'
 
+def validate_integer(value):
+    """
+    Validates that the value contains only digits.
+    Returns the value if valid, else returns ''.
+    """
+    return value if value.isdigit() else ''
 
 
 def validate_text(value):
@@ -48,22 +54,30 @@ def parse_line(line, mapping):
         dtype = field['type']
         fname = field['name']
 
-        # Validate based on type
         if dtype == 'date' and fname.lower() == 'dob':
             value, error = convert_dob(raw_value)
             if error:
                 bad_reasons.append(error)
+
         elif dtype == 'text':
             cleaned = validate_text(raw_value)
             if cleaned != raw_value:
-                    bad_reasons.append(f"Invalid {fname} (non-alpha or symbols)")
+                bad_reasons.append(f"Invalid {fname} (non-alpha or symbols)")
             value = cleaned
+
+        elif dtype == 'integer':
+            cleaned = validate_integer(raw_value)
+            if cleaned != raw_value:
+                bad_reasons.append(f"Invalid {fname} (non-digit)")
+            value = cleaned
+
         else:
-            value = raw_value  # Future types can go here
+            value = raw_value  # future types can be added here
 
         record[fname] = value
 
     return record, bad_reasons
+
 
 def parse_text_file(data_path, mapping_path, output_path, bad_data_path):
     mapping = load_mapping(mapping_path)

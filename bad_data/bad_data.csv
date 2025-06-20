@@ -1,3 +1,4 @@
 first_name,last_name,dob,ssn,address,city,state,zip_code,raw_data,comment
 Nancy,,1970-09-09,969189442,250 Brown Plaza,New Michaelmouth,MA,18093,Nancy               Do1glas             700909969189442250 Brown Plaza                         New Michaelmouth            MA18093,Invalid last_name (non-alpha or symbols)
+Angel,Escobar,1965-10-28,955218570,17913 Houston Pines,New Christine,AL,,Angel               Escobar             65102895521857017913 Houston Pines                     New Christine               AL49Y98,Invalid zip_code (non-digit)
 Adrienne,Beasley,,957953400,8695 Lisa Inlet,Barnesborough,MO,36279,Adrienne            Beasley             440a199579534008695 Lisa Inlet                         Barnesborough               MO36279,Invalid DOB
